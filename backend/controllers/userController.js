@@ -10,6 +10,22 @@ const getUser = asyncHandler(async(req, res) => {
 })
 
 
+// @desc    Get a user
+// @route   GET api/user/:id
+// @access  Private
+const getoneUser = asyncHandler(async(req, res) =>{
+    const user = await User.findById(req.params.id)
+
+    if (!user){
+        res.status(400)
+        // throw new Error("User not found")
+    }
+
+    res.status(200).json(user)
+    
+})
+
+
 // @desc    Create users
 // @route   POST api/users
 // @access  Private
@@ -65,5 +81,5 @@ const deleteUser = asyncHandler(async(req, res) => {
 
 
 module.exports = {
-    getUser, createUser, updtUser, deleteUser
+    getUser, getoneUser, createUser, updtUser, deleteUser
 }

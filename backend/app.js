@@ -3,7 +3,7 @@ const dotenv = require('dotenv').config() // This allows us to have .env file wi
 const colors = require('colors')
 const connectDB = require('./config/db')
 const port = process.env.PORT || 8000
-const {errorHandler} = require('./middleware/errorHandler')
+const { errorHandler } = require('./middleware/errorHandler')
 
 // Connect to database
 connectDB()
@@ -13,7 +13,7 @@ const app = express()
 
 //Middleware
 app.use(express.json()) // body parser of raw json
-app.use(express.urlencoded({extended: false})) // parser of urlEncoded bodies
+app.use(express.urlencoded({ extended: false })) // parser of urlEncoded bodies
 
 
 app.use('/api/users', require('./routes/userRoutes'))

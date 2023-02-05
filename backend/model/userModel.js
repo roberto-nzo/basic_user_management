@@ -1,10 +1,10 @@
 const mongoose = require('mongoose')
 
 const userSchema = mongoose.Schema({
-    username: {type: String, unique: [true, 'Username already exist in our database']},
-    name: String,
-    email: {type: String, unique: [true, 'Email already exist in our database']},
-    password: String
+    username: { type: String, unique: [true, 'Please create another username'] },
+    name: { type: String, required: [true, 'Please add a name'] },
+    email: { type: String, unique: [true, 'Please create another email'] },
+    password: { type: String, required: [true, 'Please add a password'] }
 }, {
     timestamps: true
 })

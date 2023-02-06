@@ -7,8 +7,10 @@ const bcrypt = require('bcryptjs')
 // @route   GET api/users
 // @access  Private
 const getUser = asyncHandler(async (req, res) => {
-    const users = await User.find()
-    res.status(200).json(users)
+    const users = await User.find().lean()
+    // console.log(users)
+    // res.status(200).json(users)
+    res.render('home', { users })
 })
 
 
@@ -94,8 +96,15 @@ const createUser = asyncHandler(async (req, res) => {
 
 
 // @desc    Register user
-// @route   POST api/user/register
+// @route   POST api/users/register
 // @access  Public
+
+
+const registerForm = asyncHandler(async (req, res) => {
+    res.render('register')
+})
+
+
 const registerUser = asyncHandler(async (req, res) => {
     const { username, name, email, password } = req.body
 
@@ -121,12 +130,20 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     if (user) {
-        res.status(201).json({
-            _id: user.id,
-            username: user.username,
-            email: user.email,
-            token: generateToken(user.id)
-        })
+        res.redirect('/api/users/login')
+
+        // res.status(201).json({
+        //     _id: user.id,
+        //     username: user.username,
+        //     email: user.email,
+        //     token: generateToken(user.id)
+        // })
+        // res.status(201).json({
+        //     _id: user.id,
+        //     username: user.username,
+        //     email: user.email,
+        //     token: generateToken(user.id)
+        // })
     } else {
         res.status(400)
         throw new Error("Invalid user data")
@@ -137,19 +154,32 @@ const registerUser = asyncHandler(async (req, res) => {
 // @desc    Authenticate user
 // @route   POST api/user/login
 // @access  Public
+const loginUserPage = asyncHandler(async (req, res) => {
+    res.render('login')
+})
+
+
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body
 
     const user = await User.findOne({ username })
 
     if (user && (await bcrypt.compare(password, user.password))) {
-        res.status(200).json({
+        console.log(user)
+        res.render('index', {
             _id: user.id,
             name: user.name,
             username: user.username,
             email: user.email,
             token: generateToken(user.id)
         })
+        // res.status(200).json({
+        // _id: user.id,
+        // name: user.name,
+        // username: user.username,
+        // email: user.email,
+        // token: generateToken(user.id)
+        // })
     } else {
         res.status(400)
         throw new Error('Invalid credentials')
@@ -174,8 +204,15 @@ const getMe = asyncHandler(async (req, res) => {
 // @desc    Update users
 // @route   PUT api/users/:id
 // @access  Private
+const updateUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id).lean()
+    console.log(user)
+    res.render('update', { name: user.name, username: user.username, email: user.email })
+})
+
+
 const updtUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.params.id)
 
     if (!user) {
         res.status(401)
@@ -184,7 +221,8 @@ const updtUser = asyncHandler(async (req, res) => {
 
     if (req.user.id === req.params.id) {
         const updtedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })
-        res.status(200).json(updtedUser)
+        res.render('index', { updtedUser })
+        // res.status(200).json(updtedUser)
     } else {
         res.status(401)
         throw new Error('Not authorized')
@@ -198,22 +236,24 @@ const updtUser = asyncHandler(async (req, res) => {
 // @route   DELETE api/users/:id
 // @access  Private
 const deleteUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.params.id)
 
     if (!user) {
         res.status(400)
         throw new Error('User do not exist')
     }
+    await user.remove()
 
-    if (req.user.id === req.params.id) {
-        await user.remove()
-    } else {
-        res.status(401)
-        throw new Error('Not authorized')
-    }
+    // if (req.user.id === req.params.id) {
+    //     await user.remove()
+    // } else {
+    //     res.status(401)
+    //     throw new Error('Not authorized')
+    // }
 
-
-    res.status(200).json({ id: req.params.id })
+    const _user = await User.find().lean()
+    res.redirect('/api/users')
+    // res.status(200).json({ id: req.params.id })
 })
 
 
@@ -225,5 +265,5 @@ const generateToken = (id) => {
 
 
 module.exports = {
-    getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUser, getMe
+    getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUser, loginUserPage, getMe, registerForm, updateUser
 }

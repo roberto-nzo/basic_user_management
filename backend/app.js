@@ -6,6 +6,7 @@ const colors = require('colors')
 const connectDB = require('./config/db')
 const port = process.env.PORT || 8000
 const { errorHandler } = require('./middleware/errorHandler')
+const cookieParser = require('cookie-parser')
 
 // Connect to database
 connectDB()
@@ -28,5 +29,6 @@ app.use(express.urlencoded({ extended: false })) // parser of urlEncoded bodies
 app.use('/api/users', require('./routes/userRoutes'))
 
 app.use(errorHandler)
+app.use(cookieParser)
 
 app.listen(port, () => console.log(`Server running on port ${port}`))

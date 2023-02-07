@@ -6,11 +6,13 @@ const bcrypt = require('bcryptjs')
 // @desc    Get users
 // @route   GET api/users
 // @access  Private
+
 const getUser = asyncHandler(async (req, res) => {
     const users = await User.find().lean()
+    const user = await User.findById(req.user.id)
     // console.log(users)
     // res.status(200).json(users)
-    res.render('home', { users })
+    res.render('home', { users, member: user.name })
 })
 
 
@@ -101,12 +103,17 @@ const createUser = asyncHandler(async (req, res) => {
 
 
 const registerForm = asyncHandler(async (req, res) => {
-    res.render('register')
+    if (req.headers.cookie) {
+        res.redirect('/api/users')
+    } else {
+        res.render('register')
+    }
+
 })
 
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { username, name, email, password } = req.body
+    const { username, name, email, password } = req.body //destructuring 
 
     if (!username || !name || !email || !password) {
         res.status(400)
@@ -155,7 +162,11 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route   POST api/user/login
 // @access  Public
 const loginUserPage = asyncHandler(async (req, res) => {
-    res.render('login')
+    if (req.headers.cookie) {
+        res.redirect('/api/users')
+    } else {
+        res.render('login')
+    }
 })
 
 
@@ -163,16 +174,13 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body
 
     const user = await User.findOne({ username })
+    const users = await User.find().lean()
 
     if (user && (await bcrypt.compare(password, user.password))) {
-        console.log(user)
-        res.render('index', {
-            _id: user.id,
-            name: user.name,
-            username: user.username,
-            email: user.email,
-            token: generateToken(user.id)
-        })
+        // console.log(user)
+        const token = generateToken(user.id)
+        res.cookie("token", token)
+        res.redirect('/api/users')
         // res.status(200).json({
         // _id: user.id,
         // name: user.name,
@@ -187,10 +195,20 @@ const loginUser = asyncHandler(async (req, res) => {
 })
 
 
+// @desc    Authenticate user
+// @route   POST api/user/logout
+// @access  private
+const logout = asyncHandler(async (req, res) => {
+    res.clearCookie("token")
+    res.redirect('login')
+})
+
+
 // @desc    Get user data
 // @route   Get api/user/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
+    console.log(req.user)
     const { id, username, name, email } = await User.findById(req.user.id) // we have access of req.user from middleware
     res.status(200).json({
         id: id,
@@ -206,8 +224,18 @@ const getMe = asyncHandler(async (req, res) => {
 // @access  Private
 const updateUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).lean()
-    console.log(user)
-    res.render('update', { name: user.name, username: user.username, email: user.email })
+
+    if (!user) {
+        res.status(401)
+        throw new Error('User not found')
+    }
+
+    if (req.user.id === req.params.id) {
+        res.render('update', { name: user.name, username: user.username, email: user.email })
+    } else {
+        res.status(401)
+        throw new Error('Not authorized')
+    }
 })
 
 
@@ -221,7 +249,7 @@ const updtUser = asyncHandler(async (req, res) => {
 
     if (req.user.id === req.params.id) {
         const updtedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })
-        res.render('index', { updtedUser })
+        res.redirect('/api/users')
         // res.status(200).json(updtedUser)
     } else {
         res.status(401)
@@ -242,14 +270,14 @@ const deleteUser = asyncHandler(async (req, res) => {
         res.status(400)
         throw new Error('User do not exist')
     }
-    await user.remove()
+    // await user.remove()
 
-    // if (req.user.id === req.params.id) {
-    //     await user.remove()
-    // } else {
-    //     res.status(401)
-    //     throw new Error('Not authorized')
-    // }
+    if (req.user.id === req.params.id) {
+        await user.remove()
+    } else {
+        res.status(401)
+        throw new Error('Not authorized')
+    }
 
     const _user = await User.find().lean()
     res.redirect('/api/users')
@@ -259,11 +287,11 @@ const deleteUser = asyncHandler(async (req, res) => {
 
 // Generate JWT
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '3d' }) // sign a new token with the id that is passed in with the secret key used and will expire in 30 days (the id is the data put as our payload)
+    return jwt.sign({ id }, process.env.JWT_SECRET) // , { expiresIn: '3d' } sign a new token with the id that is passed in with the secret key used and will expire in 30 days (the id is the data put as our payload)
 }
 
 
 
 module.exports = {
-    getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUser, loginUserPage, getMe, registerForm, updateUser
+    getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUser, loginUserPage, getMe, registerForm, updateUser, logout
 }

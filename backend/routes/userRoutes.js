@@ -1,20 +1,21 @@
 const express = require('express')
 const router = express.Router()
-const { getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUserPage, getMe, loginUser, registerForm, updateUser } = require('../controllers/userController')
+const { getUser, getoneUser, createUser, updtUser, deleteUser, registerUser, loginUserPage, getMe, loginUser, registerForm, updateUser, logout } = require('../controllers/userController')
 const protect = require('../middleware/authMiddleware')
 
 
-router.route('/me').get(protect, getMe)
-router.route('/').get(getUser)
+// router.route('/me').get(protect, getMe)
+router.route('/').get(protect, getUser)
 
 // Authenticate
 router.route('/register').get(registerForm)
 router.route('/register').post(registerUser)
-// router.route('/register').post(loginUser)
 router.route('/login').get(loginUserPage).post(loginUser)
+router.route('/logout').get(logout)
+// router.route('/register').post(loginUser)
 // router.route('/:id').get(getoneUser).delete(protect, deleteUser).put(protect, updtUser)
-router.route('/delete/:id').get(deleteUser)
-router.route('/update/:id').get(updateUser).post(updtUser)
+// router.route('/delete/:id').get(protect, deleteUser)
+// router.route('/update/:id').get(protect, updateUser).post(protect, updtUser)
 
 
 
